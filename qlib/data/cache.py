@@ -178,6 +178,7 @@ class MemCache:
         self.__calendar_mem_cache.clear()
         self.__instrument_mem_cache.clear()
         self.__feature_mem_cache.clear()
+        self.__index_mem_cache.clear()
 
 
 class MemCacheExpire:
