@@ -89,5 +89,3 @@ class CompustatIndex(IndexBase):
                 session.expunge_all()
                 H["x"][flag] = pd.DataFrame([{key: obj.__dict__[key]} for obj in objs for key in IdxcstHiColumns])
         return H["x"][flag]
-
-    
