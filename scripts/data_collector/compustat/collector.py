@@ -15,6 +15,7 @@ from panoramic.common.model.compustat import IdxIndex, IdxDaily, IdxcstHi
 CUR_DIR = Path(__file__).resolve().parent
 sys.path.append(str(CUR_DIR.parent.parent))
 
+from data_collector.base import BaseCollector
 from data_collector.index import IndexBase
 
 IdxcstHiColumns = ['gvkey', 'iid', 'gvkeyx', '_from', 'thru']
@@ -90,4 +91,32 @@ class CompustatIndex(IndexBase):
                 H["x"][flag] = pd.DataFrame([{key: obj.__dict__[key]} for obj in objs for key in IdxcstHiColumns])
         return H["x"][flag]
 
-    
+
+class CompustatCollector(BaseCollector):
+    def get_data(
+        self, symbol: str, interval: str, start_datetime: pd.Timestamp, end_datetime: pd.Timestamp
+    ) -> pd.DataFrame:
+        df = None
+        with ManagedSession(db=COMPUSTAT) as session:
+            query = f"""
+            select sec_dprc.datadate, sec_dprc.prccd, sec_dprc.eps, sec_dprc.cshoc
+            from sec_dprc left join security on sec_dprc.gvkey = security.gvkey
+            where security.tic = %(symbol)s AND datadate >= %(start_datetime)s AND datadate <= %(end_datetime)s;
+            """
+            params = {
+                "symbol": symbol,
+                "start_datetime": start_datetime,
+                "end_datetime": end_datetime,
+
+            }
+            df = pd.read_sql(query, params=params, con=session.connection())
+        return pd.DataFrame() if df is None else df
+
+    def get_instrument_list(self):
+        # Hardcoding the current constituents of DOW as an illustration. We'll update this with a query later.
+        return ["CRM", "AMGN", "HON", "GS", "V", "NKE", "DOW", "KO", "MMM", "JNJ", "MRK", "PG", "CAT",
+                "INTC", "BA", "VZ", "HD", "WMT", "MCD", "JPM", "AXP", "MSFT", "DIS", "CVX", "IBM",
+                "CSCO", "TRV", "UNH", "AAPL", "WBA"]
+
+    def normalize_symbol(self, symbol):
+        return symbol
